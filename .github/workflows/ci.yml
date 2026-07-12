@@ -3,15 +3,62 @@ name: Aegira Credit App Pipeline
 on:
   push:
     branches: [ "main" ]
+  workflow_dispatch:
+
+concurrency:
+  group: aegira-deploy
+  cancel-in-progress: true
 
 jobs:
-  sanity-check:
+  test-backend:
     runs-on: [self-hosted, docker-local]
     steps:
       - name: Checkout kode
         uses: actions/checkout@v4
-      - name: Cek runner jalan dengan benar
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Nyalakan Postgres & Redis
+        run: docker compose up -d postgres redis
+
+      - name: Tunggu Postgres siap
         run: |
-          echo "runner ini jalan di laptop bukan cloud ya!"
+          until docker exec aegira-postgres pg_isready -U aegira -d aegira_loan; do
+            echo "Postgres belum siap, tunggu 2 detik..."
+            Start-Sleep -Seconds 2
+          done
+        shell: pwsh
+
+      - name: Jalankan test API backend
+        working-directory: ./aegira-loan-service
+        run: mvn test
+
+      - name: Bersihkan infra test
+        if: always()
+        run: docker compose stop postgres redis
+
+  deploy:
+    needs: test-backend
+    runs-on: [self-hosted, docker-local]
+    steps:
+      - name: Checkout kode
+        uses: actions/checkout@v4
+
+      - name: Verify Docker
+        run: |
           docker --version
-          date
+          docker compose version
+
+      - name: Build and Deploy
+        run: docker compose up -d --build --remove-orphans
+
+      - name: Show running containers
+        run: docker compose ps
+
+      - name: Show logs if deployment fails
+        if: failure()
+        run: docker compose logs
