@@ -57,6 +57,9 @@ jobs:
           docker --version
           docker compose version
 
+      - name: Bersihkan container lama sebelum deploy
+        run: docker compose down --remove-orphans
+
       - name: Build and Deploy
         run: docker compose up -d --build --remove-orphans
 
