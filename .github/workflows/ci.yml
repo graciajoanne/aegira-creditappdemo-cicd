@@ -39,7 +39,7 @@ jobs:
 
       - name: Bersihkan infra test
         if: always()
-        run: docker compose stop postgres redis
+        run: docker compose down --remove-orphans
 
   deploy:
     needs: test-backend
