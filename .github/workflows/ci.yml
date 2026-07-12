@@ -45,8 +45,43 @@ jobs:
         if: always()
         run: docker compose down --remove-orphans
 
-  deploy:
+  test-frontend:
     needs: test-backend
+    runs-on: [self-hosted, docker-local]
+    steps:
+      - name: Checkout kode
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Hentikan container frontend lama (bebaskan port 5173)
+        run: docker stop aegira-frontend 2>/dev/null || true
+
+      - name: Install dependencies
+        working-directory: ./creditappdemo
+        run: npm ci
+
+      - name: Install Playwright browser (chromium)
+        working-directory: ./creditappdemo
+        run: npx playwright install --with-deps chromium
+
+      - name: Jalankan test frontend
+        working-directory: ./creditappdemo
+        run: npm run test:e2e
+
+      - name: Upload laporan Playwright jika gagal
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: creditappdemo/playwright-report/
+          retention-days: 7
+
+  deploy:
+    needs: [test-backend, test-frontend]
     runs-on: [self-hosted, docker-local]
     steps:
       - name: Checkout kode
