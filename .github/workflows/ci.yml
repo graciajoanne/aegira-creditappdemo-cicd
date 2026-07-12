@@ -1,0 +1,17 @@
+name: Aegira Credit App Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  sanity-check:
+    runs-on: [self-hosted, docker-local]
+    steps:
+      - name: Checkout kode
+        uses: actions/checkout@v4
+      - name: Cek runner jalan dengan benar
+        run: |
+          echo "runner ini jalan di laptop bukan cloud ya!"
+          docker --version
+          date
