@@ -22,6 +22,11 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Install Maven
+        run: |
+          apt-get update -qq
+          apt-get install -y maven
+
       - name: Nyalakan Postgres & Redis
         run: docker compose up -d postgres redis
 
