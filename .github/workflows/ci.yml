@@ -29,9 +29,8 @@ jobs:
         run: |
           until docker exec aegira-postgres pg_isready -U aegira -d aegira_loan; do
             echo "Postgres belum siap, tunggu 2 detik..."
-            Start-Sleep -Seconds 2
+            sleep 2
           done
-        shell: pwsh
 
       - name: Jalankan test API backend
         working-directory: ./aegira-loan-service
